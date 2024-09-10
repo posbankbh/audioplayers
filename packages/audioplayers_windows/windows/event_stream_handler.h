@@ -1,9 +1,8 @@
 #include <flutter/encodable_value.h>
 #include <flutter/event_channel.h>
-#include <flutter/flutter_engine.h>
+  #include <flutter/flutter_engine.h>
 #include <flutter/flutter_view_controller.h>
 #include <flutter/plugin_registrar.h>
-
 #include <mutex>
 
 using namespace flutter;
@@ -15,15 +14,15 @@ class EventStreamHandler : public StreamHandler<T> {
 
   virtual ~EventStreamHandler() = default;
 
-    auto main_task_runner = flutter::FlutterEngineGetTaskRunner(
+  void Success(std::unique_ptr<T> _data) {
+    std::unique_lock<std::mutex> _ul(m_mtx);
+
+    // Get the task runner for the platform (main) thread
+    FlutterTaskRunner* main_task_runner = FlutterEngineGetTaskRunner(
       flutter::FlutterTaskRunnerType::kPlatformTaskRunner);
 
-
-  void Success(std::unique_ptr<T> _data) {
-    main_task_runner->PostTask([]() {
-      std::unique_lock<std::mutex> _ul(m_mtx);
-      if (m_sink.get())
-        m_sink.get()->Success(*_data.get());
+    main_task_runner->PostTask([message]() {
+      m_sink.get()->Success(*_data.get());
     });
   }
 
