@@ -9,8 +9,7 @@ import 'package:audioplayers_platform_interface/src/map_extension.dart';
 import 'package:audioplayers_platform_interface/src/method_channel_extension.dart';
 import 'package:flutter/services.dart';
 
-class AudioplayersPlatform extends AudioplayersPlatformInterface
-    with MethodChannelAudioplayersPlatform, EventChannelAudioplayersPlatform {
+class AudioplayersPlatform extends AudioplayersPlatformInterface with MethodChannelAudioplayersPlatform, EventChannelAudioplayersPlatform {
   AudioplayersPlatform();
 
   @override
@@ -26,10 +25,8 @@ class AudioplayersPlatform extends AudioplayersPlatformInterface
   }
 }
 
-mixin MethodChannelAudioplayersPlatform
-    implements MethodChannelAudioplayersPlatformInterface {
-  static const MethodChannel _methodChannel =
-      MethodChannel('xyz.luan/audioplayers');
+mixin MethodChannelAudioplayersPlatform implements MethodChannelAudioplayersPlatformInterface {
+  static const MethodChannel _methodChannel = MethodChannel('xyz.luan/audioplayers');
 
   @override
   Future<void> create(String playerId) {
@@ -222,48 +219,11 @@ mixin MethodChannelAudioplayersPlatform
   }
 }
 
-mixin EventChannelAudioplayersPlatform
-    implements EventChannelAudioplayersPlatformInterface {
+mixin EventChannelAudioplayersPlatform implements EventChannelAudioplayersPlatformInterface {
   final Map<String, Stream<AudioEvent>> streams = {};
 
   // Only can be used after have created the event channel on the native side.
-  void createEventStream(String playerId) {
-    final eventChannel = EventChannel('xyz.luan/audioplayers/events/$playerId');
-    streams[playerId] = eventChannel.receiveBroadcastStream().map(
-      (dynamic event) {
-        final map = event as Map<dynamic, dynamic>;
-        final eventType = map.getString('event');
-        switch (eventType) {
-          case 'audio.onDuration':
-            final millis = map.getInt('value');
-            return AudioEvent(
-              eventType: AudioEventType.duration,
-              duration: millis != null
-                  ? Duration(milliseconds: millis)
-                  : Duration.zero,
-            );
-          case 'audio.onComplete':
-            return const AudioEvent(eventType: AudioEventType.complete);
-          case 'audio.onSeekComplete':
-            return const AudioEvent(eventType: AudioEventType.seekComplete);
-          case 'audio.onPrepared':
-            final isPrepared = map.getBool('value');
-            return AudioEvent(
-              eventType: AudioEventType.prepared,
-              isPrepared: isPrepared,
-            );
-          case 'audio.onLog':
-            final value = map.getString('value');
-            return AudioEvent(
-              eventType: AudioEventType.log,
-              logMessage: value,
-            );
-          default:
-            throw UnimplementedError('Event Method does not exist $eventType');
-        }
-      },
-    );
-  }
+  void createEventStream(String playerId) {}
 
   void disposeEventStream(String playerId) {
     if (streams.containsKey(playerId)) {
