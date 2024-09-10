@@ -223,7 +223,41 @@ mixin EventChannelAudioplayersPlatform implements EventChannelAudioplayersPlatfo
   final Map<String, Stream<AudioEvent>> streams = {};
 
   // Only can be used after have created the event channel on the native side.
-  void createEventStream(String playerId) {}
+  void createEventStream(String playerId) {
+    final eventChannel = EventChannel('xyz.luan/audioplayers/events/$playerId');
+    streams[playerId] = eventChannel.receiveBroadcastStream().map(
+      (dynamic event) {
+        final map = event as Map<dynamic, dynamic>;
+        final eventType = map.getString('event');
+        switch (eventType) {
+          case 'audio.onDuration':
+            final millis = map.getInt('value');
+            return AudioEvent(
+              eventType: AudioEventType.duration,
+              duration: millis != null ? Duration(milliseconds: millis) : Duration.zero,
+            );
+          case 'audio.onComplete':
+            return const AudioEvent(eventType: AudioEventType.complete);
+          case 'audio.onSeekComplete':
+            return const AudioEvent(eventType: AudioEventType.seekComplete);
+          case 'audio.onPrepared':
+            final isPrepared = map.getBool('value');
+            return AudioEvent(
+              eventType: AudioEventType.prepared,
+              isPrepared: isPrepared,
+            );
+          case 'audio.onLog':
+            final value = map.getString('value');
+            return AudioEvent(
+              eventType: AudioEventType.log,
+              logMessage: value,
+            );
+          default:
+            throw UnimplementedError('Event Method does not exist $eventType');
+        }
+      },
+    );
+  }
 
   void disposeEventStream(String playerId) {
     if (streams.containsKey(playerId)) {
